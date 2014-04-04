@@ -117,8 +117,6 @@ public class Application implements StreamingApplication
     statsListener.setIntervalMillis(60 * 1000);
     dag.setAttribute(flumeInput, OperatorContext.STATS_LISTENERS, Arrays.asList(new StatsListener[]{statsListener}));
 
-    flumeInput.setConnectAddresses(dtFlumeAdapterAddresses);
-
     /*
      * Dedupe the flume events bucketData.
      */
