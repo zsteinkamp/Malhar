@@ -118,7 +118,7 @@ public class Application implements StreamingApplication
     /*
      * Dedupe the flume events bucketData.
      */
-    FlumeEventDeduper deduper = new FlumeEventDeduper();
+    FlumeEventDeduper deduper = dag.addOperator("Deduper", new FlumeEventDeduper());
     deduper.setBucketManager(new TimeBasedBucketManagerImpl<FlumeEvent>());
     dag.setAttribute(deduper, OperatorContext.APPLICATION_WINDOW_COUNT, 120);
 
