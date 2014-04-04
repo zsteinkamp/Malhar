@@ -26,6 +26,7 @@ import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.api.annotation.ShipContainingJars;
 
 import com.datatorrent.flume.operator.AbstractFlumeInputOperator;
+import com.datatorrent.flume.storage.EventCodec;
 import com.datatorrent.lib.bucket.HdfsBucketStore;
 import com.datatorrent.lib.bucket.TimeBasedBucketManagerImpl;
 import com.datatorrent.lib.dedup.Deduper;
@@ -108,12 +109,15 @@ public class Application implements StreamingApplication
 
     FlumeInputOperator flumeInput = dag.addOperator("FlumeIngestor", new FlumeInputOperator());
     flumeInput.setConnectAddresses(dtFlumeAdapterAddresses);
+    flumeInput.setCodec(new EventCodec());
 
-    /* initialize auto discovery mechanism for the operator */
+      /* initialize auto discovery mechanism for the operator */
     FlumeInputOperator.ZKStatsListner statsListener = new FlumeInputOperator.ZKStatsListner();
     statsListener.configure(getFlumeContext(conf, "FlumeIngestor.DiscoveryContext."));
     statsListener.setIntervalMillis(60 * 1000);
     dag.setAttribute(flumeInput, OperatorContext.STATS_LISTENERS, Arrays.asList(new StatsListener[]{statsListener}));
+
+    flumeInput.setConnectAddresses(dtFlumeAdapterAddresses);
 
     /*
      * Dedupe the flume events bucketData.
