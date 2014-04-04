@@ -72,6 +72,21 @@
       <type>test-jar</type>
     </dependency>
     <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>dt-flume</artifactId>
+      <version>${dt.framework.version}</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>dt-netlet</artifactId>
+          <groupId>${project.groupId}</groupId>
+        </exclusion>
+        <exclusion>
+          <artifactId>dt-stram</artifactId>
+          <groupId>${project.groupId}</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
       <groupId>org.apache.kafka</groupId>
       <artifactId>kafka_2.10</artifactId>
       <version>0.8.0</version>
