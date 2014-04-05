@@ -34,13 +34,11 @@ import com.google.common.collect.Maps;
 
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.Context.PortContext;
-import com.datatorrent.api.DAG;
-import com.datatorrent.api.DAGContext;
-import com.datatorrent.api.StatsListener;
-import com.datatorrent.api.StreamingApplication;
+import com.datatorrent.api.*;
 import com.datatorrent.api.annotation.ShipContainingJars;
 
 import com.datatorrent.flume.operator.AbstractFlumeInputOperator;
+import com.datatorrent.flume.storage.EventCodec;
 import com.datatorrent.lib.bucket.HdfsBucketStore;
 import com.datatorrent.lib.bucket.TimeBasedBucketManagerImpl;
 import com.datatorrent.lib.dedup.Deduper;
@@ -53,6 +51,7 @@ public class Application implements StreamingApplication
 {
   public static final byte FIELD_SEPARATOR = 1;
   public static final String FLUME_SINK_ADDRESSES = "flumeSinkAddresses";
+  public static final String SIMULATE_INPUT_OPERATOR = "simulateInputOperator";
 
   @ShipContainingJars(classes = {Configurable.class, RetryPolicy.class, ServiceInstance.class, Context.class, CuratorFramework.class, DateTimeFormat.class})
   public static class FlumeInputOperator extends AbstractFlumeInputOperator<FlumeEvent>
@@ -114,6 +113,8 @@ public class Application implements StreamingApplication
   @Override
   public void populateDAG(DAG dag, Configuration conf)
   {
+    boolean simulate = conf.getBoolean(SIMULATE_INPUT_OPERATOR, false);
+
     String[] dtFlumeAdapterAddresses = conf.getStrings(FLUME_SINK_ADDRESSES, new String[]{"0:localhost:8080"});
     /*
      * set the streaming window to be 1 second long.
@@ -121,15 +122,26 @@ public class Application implements StreamingApplication
     dag.setAttribute(DAGContext.STREAMING_WINDOW_SIZE_MILLIS, 1000);
     dag.setAttribute(PortContext.QUEUE_CAPACITY, 16 * 1024);
 
-    FlumeInputOperator flumeInput = dag.addOperator("FlumeIngestor", new FlumeInputOperator());
-    flumeInput.setConnectAddresses(dtFlumeAdapterAddresses);
-    flumeInput.setCodec(new FlumeEventCodec());
+    DefaultOutputPort<FlumeEvent> feedPort;
+    if (simulate) {
+      InputSimulator simulator = dag.addOperator("InputSimulator", new InputSimulator());
+      simulator.setRate(2500);
+      simulator.setFilePath(conf.get(getClass().getName() + ".InputSimulator.filePath", "dt_test_data"));
+      feedPort = simulator.output;
+    }
+    else {
+      FlumeInputOperator inputOperator = dag.addOperator("FlumeIngestor", new FlumeInputOperator());
+      inputOperator.setConnectAddresses(dtFlumeAdapterAddresses);
+      inputOperator.setCodec(new EventCodec());
 
       /* initialize auto discovery mechanism for the operator */
-    FlumeInputOperator.ZKStatsListner statsListener = new FlumeInputOperator.ZKStatsListner();
-    statsListener.configure(getFlumeContext(conf, "FlumeIngestor.DiscoveryContext."));
-    statsListener.setIntervalMillis(60 * 1000);
-    dag.setAttribute(flumeInput, OperatorContext.STATS_LISTENERS, Arrays.asList(new StatsListener[]{statsListener}));
+      FlumeInputOperator.ZKStatsListner statsListener = new FlumeInputOperator.ZKStatsListner();
+      statsListener.configure(getFlumeContext(conf, "FlumeIngestor.DiscoveryContext."));
+      statsListener.setIntervalMillis(60 * 1000);
+      dag.setAttribute(inputOperator, OperatorContext.STATS_LISTENERS, Arrays.asList(new StatsListener[]{statsListener}));
+
+      feedPort = inputOperator.output;
+    }
 
     /*
      * Dedupe the flume events bucketData.
@@ -140,7 +152,7 @@ public class Application implements StreamingApplication
 
     ConsoleOutputOperator display = dag.addOperator("Display", new ConsoleOutputOperator());
 
-    dag.addStream("FlumeEvents", flumeInput.output, deduper.input);
+    dag.addStream("FlumeEvents", feedPort, deduper.input);
     dag.addStream("DedupedEvents", deduper.output, display.input);
 
   }

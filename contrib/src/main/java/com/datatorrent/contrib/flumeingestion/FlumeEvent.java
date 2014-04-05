@@ -1,15 +1,3 @@
-package com.datatorrent.contrib.flumeingestion;
-
-import java.io.Serializable;
-import java.util.Arrays;
-
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.datatorrent.common.util.Slice;
-import com.datatorrent.lib.bucket.Bucketable;
 /*
  * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
  *
@@ -25,6 +13,18 @@ import com.datatorrent.lib.bucket.Bucketable;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.datatorrent.contrib.flumeingestion;
+
+import java.io.Serializable;
+import java.util.Arrays;
+
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.datatorrent.common.util.Slice;
+import com.datatorrent.lib.bucket.Bucketable;
 import com.datatorrent.lib.bucket.Event;
 
 public class FlumeEvent implements Bucketable, Event
