@@ -126,8 +126,10 @@ public class InputSimulator extends BaseOperator implements InputOperator
       }
       else {
         eventRow.time = System.currentTimeMillis();
+        byte randomByte = (byte) random.nextInt(128);
+        int idIndex = eventRow.id.offset + random.nextInt(eventRow.id.length);
+        eventRow.id.buffer[idIndex] = randomByte;
       }
-
       output.emit(eventRow);
     }
   }
