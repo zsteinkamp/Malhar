@@ -69,6 +69,7 @@ import com.datatorrent.common.util.DTThrowable;
  * </p>
  *
  * @param <T> event type
+ * @since 0.9.4
  */
 public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>, Runnable
 {
@@ -225,7 +226,6 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
           }
           else {
             int bucketIdx = (int) requestedKey % noOfBuckets;
-            Map<Object, T> bucketDataInStore = bucketStore.fetchBucket(bucketIdx);
 
             if (buckets[bucketIdx] != null && buckets[bucketIdx].bucketKey != requestedKey) {
               //Delete the old bucket in memory at that index.
@@ -239,6 +239,8 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
               bucketStore.deleteBucket(bucketIdx);
               logger.debug("deleted bucket {} {}", oldBucket.bucketKey, bucketIdx);
             }
+
+            Map<Object, T> bucketDataInStore = bucketStore.fetchBucket(bucketIdx);
 
             //Delete the least recently used bucket in memory if the noOfBucketsInMemory threshold is reached.
             if (evictionCandidates.size() + 1 > noOfBucketsInMemory) {
