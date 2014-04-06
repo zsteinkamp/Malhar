@@ -35,6 +35,7 @@ import com.google.common.collect.Maps;
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.Context.PortContext;
 import com.datatorrent.api.*;
+import com.datatorrent.api.annotation.ApplicationAnnotation;
 import com.datatorrent.api.annotation.ShipContainingJars;
 
 import com.datatorrent.flume.operator.AbstractFlumeInputOperator;
@@ -44,9 +45,7 @@ import com.datatorrent.lib.bucket.TimeBasedBucketManagerImpl;
 import com.datatorrent.lib.dedup.Deduper;
 import com.datatorrent.lib.io.ConsoleOutputOperator;
 
-/**
- * Application to compute the ad dimensions and keep track of spend/overspend
- */
+@ApplicationAnnotation(name="FlumeIngestion")
 public class Application implements StreamingApplication
 {
   public static final byte FIELD_SEPARATOR = 1;
