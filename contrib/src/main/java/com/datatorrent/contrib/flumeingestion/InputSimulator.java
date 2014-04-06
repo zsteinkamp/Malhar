@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import org.joda.time.format.DateTimeFormat;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -28,7 +30,9 @@ import com.datatorrent.api.BaseOperator;
 import com.datatorrent.api.Context;
 import com.datatorrent.api.DefaultOutputPort;
 import com.datatorrent.api.InputOperator;
+import com.datatorrent.api.annotation.ShipContainingJars;
 
+@ShipContainingJars(classes = {DateTimeFormat.class})
 public class InputSimulator extends BaseOperator implements InputOperator
 {
   private int rate;
