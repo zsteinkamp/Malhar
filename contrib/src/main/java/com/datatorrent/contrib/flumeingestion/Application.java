@@ -32,9 +32,9 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
+import com.datatorrent.api.*;
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.Context.PortContext;
-import com.datatorrent.api.*;
 import com.datatorrent.api.annotation.ApplicationAnnotation;
 import com.datatorrent.api.annotation.ShipContainingJars;
 
@@ -43,7 +43,6 @@ import com.datatorrent.flume.storage.EventCodec;
 import com.datatorrent.lib.bucket.HdfsBucketStore;
 import com.datatorrent.lib.bucket.TimeBasedBucketManagerImpl;
 import com.datatorrent.lib.dedup.Deduper;
-import com.datatorrent.lib.io.ConsoleOutputOperator;
 
 @ApplicationAnnotation(name = "FlumeIngestion")
 public class Application implements StreamingApplication
@@ -110,6 +109,18 @@ public class Application implements StreamingApplication
     return context;
   }
 
+  public static class BlackHole extends BaseOperator
+  {
+    public final transient DefaultInputPort<Object> input = new DefaultInputPort<Object>()
+    {
+      @Override
+      public void process(Object tuple)
+      {
+      }
+
+    };
+  }
+
   @Override
   public void populateDAG(DAG dag, Configuration conf)
   {
@@ -144,7 +155,7 @@ public class Application implements StreamingApplication
       feedPort = inputOperator.output;
     }
 
-    ConsoleOutputOperator display = dag.addOperator("Display", new ConsoleOutputOperator());
+    BlackHole blackHole = dag.addOperator("Display", new BlackHole());
 
     /*
      * Dedupe the flume events bucketData.
@@ -154,10 +165,10 @@ public class Application implements StreamingApplication
       deduper.setBucketManager(new TimeBasedBucketManagerImpl<FlumeEvent>());
       dag.setAttribute(deduper, OperatorContext.APPLICATION_WINDOW_COUNT, 120);
       dag.addStream("FlumeEvents", feedPort, deduper.input);
-      dag.addStream("DedupedEvents", deduper.output, display.input);
+      dag.addStream("DedupedEvents", deduper.output, blackHole.input);
     }
     else {
-      dag.addStream("FlumeEvents", feedPort, display.input);
+      dag.addStream("FlumeEvents", feedPort, blackHole.input);
     }
 
   }
