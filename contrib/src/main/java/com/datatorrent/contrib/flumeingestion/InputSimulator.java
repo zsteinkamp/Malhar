@@ -34,7 +34,9 @@ import com.datatorrent.api.DefaultOutputPort;
 import com.datatorrent.api.InputOperator;
 import com.datatorrent.api.annotation.ShipContainingJars;
 
-@ShipContainingJars(classes = {DateTimeFormat.class})
+import com.datatorrent.lib.bucket.Bucketable;
+
+@ShipContainingJars(classes = {DateTimeFormat.class, Bucketable.class})
 public class InputSimulator extends BaseOperator implements InputOperator
 {
   private int rate;
