@@ -93,37 +93,38 @@ public class InputSimulator extends BaseOperator implements InputOperator
     int lastIndex = startIndex + rate;
     if (lastIndex > cacheSize) {
       lastIndex -= cacheSize;
-      processBatch(cache.subList(startIndex, cacheSize));
+      processBatch(startIndex, cacheSize);
       startIndex = 0;
       while (lastIndex > cacheSize) {
-        processBatch(cache);
+        processBatch(0, cacheSize);
         lastIndex -= cacheSize;
       }
-      processBatch(cache.subList(0, lastIndex));
+      processBatch(0, lastIndex);
     }
     else {
-      processBatch(cache.subList(startIndex, lastIndex));
+      processBatch(startIndex, lastIndex);
     }
     startIndex = lastIndex;
   }
 
-  private void processBatch(List<FlumeEvent> rows)
+  private void processBatch(int start, int end)
   {
-    if (rows.isEmpty()) {
+    int total = end - start;
+    if (total <= 0) {
       return;
     }
 
     int noise = random.nextInt(numberOfPastEvents + 1);
     Set<Integer> pastIndices = Sets.newHashSet();
     for (int i = 0; i < noise; i++) {
-      pastIndices.add(random.nextInt(rows.size()));
+      pastIndices.add(random.nextInt(total));
     }
 
     Calendar calendar = Calendar.getInstance();
     calendar.add(Calendar.DATE, -1);
 
-    for (int i = 0; i < rows.size(); i++) {
-      FlumeEvent eventRow = rows.get(i);
+    for (int i = start; i < end; i++) {
+      FlumeEvent eventRow = cache.get(i);
 
       if (pastIndices.contains(i)) {
         eventRow.time = calendar.getTimeInMillis();
