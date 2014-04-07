@@ -22,6 +22,8 @@ import java.util.Random;
 import java.util.Set;
 
 import org.joda.time.format.DateTimeFormat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -73,6 +75,7 @@ public class InputSimulator extends BaseOperator implements InputOperator
     }
     cacheSize = cache.size();
     numberOfPastEvents = percentPastEvents / 100 * cacheSize;
+    logger.debug("config {} {} {}", cacheSize, rate, numberOfPastEvents);
   }
 
   private void buildCache(BufferedReader lineReader) throws IOException
@@ -89,7 +92,6 @@ public class InputSimulator extends BaseOperator implements InputOperator
   @Override
   public void emitTuples()
   {
-
     int lastIndex = startIndex + rate;
     if (lastIndex > cacheSize) {
       lastIndex -= cacheSize;
@@ -105,10 +107,12 @@ public class InputSimulator extends BaseOperator implements InputOperator
       processBatch(startIndex, lastIndex);
     }
     startIndex = lastIndex;
+    logger.debug("emit {}", System.currentTimeMillis());
   }
 
   private void processBatch(int start, int end)
   {
+    logger.debug("process {} {}", start, end);
     int total = end - start;
     if (total <= 0) {
       return;
@@ -156,5 +160,7 @@ public class InputSimulator extends BaseOperator implements InputOperator
   {
     this.percentPastEvents = percentPastEvents;
   }
+
+  private static final Logger logger = LoggerFactory.getLogger(InputSimulator.class);
 
 }
