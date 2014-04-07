@@ -155,7 +155,7 @@ public class Application implements StreamingApplication
       feedPort = inputOperator.output;
     }
 
-    BlackHole blackHole = dag.addOperator("Display", new BlackHole());
+    BlackHole blackHole = dag.addOperator("BlackHole", new BlackHole());
 
     /*
      * Dedupe the flume events bucketData.
