@@ -23,13 +23,10 @@ import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.datatorrent.api.annotation.ShipContainingJars;
-
 import com.datatorrent.common.util.Slice;
 import com.datatorrent.lib.bucket.Bucketable;
 import com.datatorrent.lib.bucket.Event;
 
-@ShipContainingJars(classes = {DateTimeFormat.class})
 public class FlumeEvent implements Bucketable, Event
 {
   public Slice id;

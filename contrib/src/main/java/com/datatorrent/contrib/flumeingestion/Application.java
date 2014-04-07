@@ -45,12 +45,13 @@ import com.datatorrent.lib.bucket.TimeBasedBucketManagerImpl;
 import com.datatorrent.lib.dedup.Deduper;
 import com.datatorrent.lib.io.ConsoleOutputOperator;
 
-@ApplicationAnnotation(name="FlumeIngestion")
+@ApplicationAnnotation(name = "FlumeIngestion")
 public class Application implements StreamingApplication
 {
   public static final byte FIELD_SEPARATOR = 1;
   public static final String FLUME_SINK_ADDRESSES = "flumeSinkAddresses";
   public static final String SIMULATE_INPUT_OPERATOR = "simulateInputOperator";
+  public static final String SKIP_DEDUPER = "skipDeduper";
 
   @ShipContainingJars(classes = {Configurable.class, RetryPolicy.class, ServiceInstance.class, Context.class, CuratorFramework.class, DateTimeFormat.class})
   public static class FlumeInputOperator extends AbstractFlumeInputOperator<FlumeEvent>
@@ -113,6 +114,7 @@ public class Application implements StreamingApplication
   public void populateDAG(DAG dag, Configuration conf)
   {
     boolean simulate = conf.getBoolean(SIMULATE_INPUT_OPERATOR, false);
+    boolean skipDeduper = conf.getBoolean(SKIP_DEDUPER, false);
 
     String[] dtFlumeAdapterAddresses = conf.getStrings(FLUME_SINK_ADDRESSES, new String[]{"0:localhost:8080"});
     /*
@@ -142,17 +144,21 @@ public class Application implements StreamingApplication
       feedPort = inputOperator.output;
     }
 
+    ConsoleOutputOperator display = dag.addOperator("Display", new ConsoleOutputOperator());
+
     /*
      * Dedupe the flume events bucketData.
      */
-    FlumeEventDeduper deduper = dag.addOperator("Deduper", new FlumeEventDeduper());
-    deduper.setBucketManager(new TimeBasedBucketManagerImpl<FlumeEvent>());
-    dag.setAttribute(deduper, OperatorContext.APPLICATION_WINDOW_COUNT, 120);
-
-    ConsoleOutputOperator display = dag.addOperator("Display", new ConsoleOutputOperator());
-
-    dag.addStream("FlumeEvents", feedPort, deduper.input);
-    dag.addStream("DedupedEvents", deduper.output, display.input);
+    if (skipDeduper) {
+      FlumeEventDeduper deduper = dag.addOperator("Deduper", new FlumeEventDeduper());
+      deduper.setBucketManager(new TimeBasedBucketManagerImpl<FlumeEvent>());
+      dag.setAttribute(deduper, OperatorContext.APPLICATION_WINDOW_COUNT, 120);
+      dag.addStream("FlumeEvents", feedPort, deduper.input);
+      dag.addStream("DedupedEvents", deduper.output, display.input);
+    }
+    else {
+      dag.addStream("FlumeEvents", feedPort, display.input);
+    }
 
   }
 
