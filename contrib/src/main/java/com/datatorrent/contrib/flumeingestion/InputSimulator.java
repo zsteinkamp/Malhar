@@ -135,13 +135,15 @@ public class InputSimulator extends BaseOperator implements InputOperator
     }
 
     Calendar calendar = Calendar.getInstance();
-    calendar.add(Calendar.DATE, -1);
+    long high = calendar.getTimeInMillis();
+    calendar.add(Calendar.DATE, -2);
+    long low = calendar.getTimeInMillis();
 
     for (int i = start; i < end; i++) {
       FlumeEvent eventRow = cache.get(i);
 
       if (pastIndices.contains(i)) {
-        eventRow.time = calendar.getTimeInMillis();
+        eventRow.time = (long) ((Math.random() * (high - low)) + low);
         logger.debug("past {}", eventRow.getTime());
 
       }
