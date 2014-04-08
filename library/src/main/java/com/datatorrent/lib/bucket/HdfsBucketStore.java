@@ -61,9 +61,8 @@ public class HdfsBucketStore<T extends Bucketable> implements BucketStore<T>
   @Min(1)
   protected int noOfBuckets;
   private Map<Long, Long>[] bucketPositions;
-  private Class<Object> eventKeyClass;
+  private Class<?> eventKeyClass;
   private Class<T> eventClass;
-
 
   //Non check-pointed
   private transient String bucketRoot;
@@ -141,7 +140,6 @@ public class HdfsBucketStore<T extends Bucketable> implements BucketStore<T>
   /**
    * {@inheritDoc}
    */
-  @SuppressWarnings("unchecked")
   @Override
   public void storeBucketData(long window, Map<Integer, Map<Object, T>> data) throws IOException
   {
@@ -157,12 +155,14 @@ public class HdfsBucketStore<T extends Bucketable> implements BucketStore<T>
       bucketPositions[bucketIdx].put(window, offset);
 
       Map<Object, T> bucketData = data.get(bucketIdx);
+
       if (eventKeyClass == null) {
         Map.Entry<Object, T> eventEntry = bucketData.entrySet().iterator().next();
-        eventKeyClass = (Class<Object>) eventEntry.getKey().getClass();
-
+        eventKeyClass = eventEntry.getKey().getClass();
         if (!writeEventKeysOnly) {
-          eventClass = (Class<T>) eventEntry.getValue().getClass();
+          @SuppressWarnings("unchecked")
+          Class<T> lEventClass = (Class<T>) eventEntry.getValue().getClass();
+          eventClass = lEventClass;
         }
       }
       //Write the size of data and then data
@@ -171,17 +171,18 @@ public class HdfsBucketStore<T extends Bucketable> implements BucketStore<T>
         serde.writeObject(output, entry.getKey());
 
         if (!writeEventKeysOnly) {
-          int numValuePos = output.position();
+          int posLength = output.position();
           output.writeInt(0); //temporary place holder
           serde.writeObject(output, entry.getValue());
-          int valueLength = output.position() - numValuePos - 4;
-          output.setPosition(numValuePos);
+          int posValue = output.position();
+          int valueLength = posValue - posLength - 4;
+          output.setPosition(posLength);
           output.writeInt(valueLength);
+          output.setPosition(posValue);
         }
       }
       output.flush();
       offset = dataStream.getPos();
-
     }
     output.close();
     dataStream.close();
