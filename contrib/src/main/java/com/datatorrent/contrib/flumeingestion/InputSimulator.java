@@ -119,15 +119,12 @@ public class InputSimulator extends BaseOperator implements InputOperator
         processBatch(startIndex, lastIndex);
       }
       startIndex = lastIndex;
-      logger.debug("emit {}", System.currentTimeMillis());
-
       doEmit = false;
     }
   }
 
   private void processBatch(int start, int end)
   {
-    logger.debug("process {} {}", start, end);
     int total = end - start;
     if (total <= 0) {
       return;
@@ -147,6 +144,8 @@ public class InputSimulator extends BaseOperator implements InputOperator
 
       if (pastIndices.contains(i)) {
         eventRow.time = calendar.getTimeInMillis();
+        logger.debug("past {}", eventRow.getTime());
+
       }
       else {
         eventRow.time = System.currentTimeMillis();
