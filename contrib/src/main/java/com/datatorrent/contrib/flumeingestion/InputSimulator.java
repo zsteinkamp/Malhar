@@ -49,11 +49,13 @@ public class InputSimulator extends BaseOperator implements InputOperator
   private transient int startIndex;
   private transient int cacheSize;
   private transient Random random;
+  private transient boolean doEmit;
 
   public InputSimulator()
   {
     rate = 2500;
     percentPastEvents = 5;
+    doEmit = true;
     random = new Random();
   }
 
@@ -78,6 +80,7 @@ public class InputSimulator extends BaseOperator implements InputOperator
     cacheSize = cache.size();
     numberOfPastEvents = percentPastEvents / 100 * cacheSize;
     logger.debug("config {} {} {}", cacheSize, rate, numberOfPastEvents);
+    doEmit = true;
   }
 
   private void buildCache(BufferedReader lineReader) throws IOException
@@ -92,24 +95,34 @@ public class InputSimulator extends BaseOperator implements InputOperator
   }
 
   @Override
+  public void beginWindow(long windowId)
+  {
+    doEmit = true;
+  }
+
+  @Override
   public void emitTuples()
   {
-    int lastIndex = startIndex + rate;
-    if (lastIndex > cacheSize) {
-      lastIndex -= cacheSize;
-      processBatch(startIndex, cacheSize);
-      startIndex = 0;
-      while (lastIndex > cacheSize) {
-        processBatch(0, cacheSize);
+    if (doEmit) {
+      int lastIndex = startIndex + rate;
+      if (lastIndex > cacheSize) {
         lastIndex -= cacheSize;
+        processBatch(startIndex, cacheSize);
+        startIndex = 0;
+        while (lastIndex > cacheSize) {
+          processBatch(0, cacheSize);
+          lastIndex -= cacheSize;
+        }
+        processBatch(0, lastIndex);
       }
-      processBatch(0, lastIndex);
+      else {
+        processBatch(startIndex, lastIndex);
+      }
+      startIndex = lastIndex;
+      logger.debug("emit {}", System.currentTimeMillis());
+
+      doEmit = false;
     }
-    else {
-      processBatch(startIndex, lastIndex);
-    }
-    startIndex = lastIndex;
-    logger.debug("emit {}", System.currentTimeMillis());
   }
 
   private void processBatch(int start, int end)
