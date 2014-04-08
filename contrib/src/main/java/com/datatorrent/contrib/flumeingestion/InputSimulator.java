@@ -45,7 +45,6 @@ public class InputSimulator extends BaseOperator implements InputOperator
 
   public final transient DefaultOutputPort<FlumeEvent> output = new DefaultOutputPort<FlumeEvent>();
   private transient List<FlumeEvent> cache;
-  private transient int numberOfPastEvents;
   private transient int startIndex;
   private transient int cacheSize;
   private transient Random random;
@@ -78,8 +77,7 @@ public class InputSimulator extends BaseOperator implements InputOperator
       throw new RuntimeException(e);
     }
     cacheSize = cache.size();
-    numberOfPastEvents = percentPastEvents / 100 * cacheSize;
-    logger.debug("config {} {} {}", cacheSize, rate, numberOfPastEvents);
+    logger.debug("config {} {} {}", cacheSize, rate);
     doEmit = true;
   }
 
@@ -129,7 +127,7 @@ public class InputSimulator extends BaseOperator implements InputOperator
     if (total <= 0) {
       return;
     }
-
+    int numberOfPastEvents = (int) (percentPastEvents / 100.0 * cacheSize);
     int noise = random.nextInt(numberOfPastEvents + 1);
     Set<Integer> pastIndices = Sets.newHashSet();
     for (int i = 0; i < noise; i++) {

@@ -241,8 +241,11 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
 
             long start = System.currentTimeMillis();
             Map<Object, T> bucketDataInStore = bucketStore.fetchBucket(bucketIdx);
-            logger.debug("time to fetch {}", System.currentTimeMillis() - start);
-
+            if(logger.isDebugEnabled()){
+              long timeToFetch = System.currentTimeMillis() - start;
+              if(timeToFetch > 0)
+                logger.debug("time to fetch {}", timeToFetch);
+            }
             //Delete the least recently used bucket in memory if the noOfBucketsInMemory threshold is reached.
             if (evictionCandidates.size() + 1 > noOfBucketsInMemory) {
 
