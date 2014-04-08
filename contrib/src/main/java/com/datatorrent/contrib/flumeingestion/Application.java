@@ -72,7 +72,7 @@ public class Application implements StreamingApplication
     protected com.datatorrent.lib.bucket.Context getBucketContext(com.datatorrent.api.Context.OperatorContext context)
     {
       Map<String, Object> parameters = Maps.newHashMap();
-      parameters.put(HdfsBucketStore.APP_PATH, context.getValue(DAG.APPLICATION_PATH));
+      parameters.put(HdfsBucketStore.APP_PATH, "/flumeIngestor");
       parameters.put(HdfsBucketStore.OPERATOR_ID, context.getId());
       parameters.put(HdfsBucketStore.PARTITION_KEYS, partitionKeys);
       parameters.put(HdfsBucketStore.PARTITION_MASK, partitionMask);
