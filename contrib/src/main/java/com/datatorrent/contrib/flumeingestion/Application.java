@@ -19,6 +19,8 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.annotation.Nonnull;
+
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.x.discovery.ServiceInstance;
@@ -69,10 +71,18 @@ public class Application implements StreamingApplication
    */
   public static class FlumeEventDeduper extends Deduper<FlumeEvent, FlumeEvent>
   {
+    private String bucketsRoot = "buckets";
+
+    public void setBucketsRoot(@Nonnull String bucketsRoot)
+    {
+      this.bucketsRoot = bucketsRoot;
+    }
+
     @Override
     protected com.datatorrent.lib.bucket.Context getBucketContext(com.datatorrent.api.Context.OperatorContext context)
     {
       Map<String, Object> parameters = Maps.newHashMap();
+      parameters.put(HdfsBucketStore.STORE_ROOT, bucketsRoot);
       parameters.put(HdfsBucketStore.OPERATOR_ID, context.getId());
       parameters.put(HdfsBucketStore.PARTITION_KEYS, partitionKeys);
       parameters.put(HdfsBucketStore.PARTITION_MASK, partitionMask);
@@ -85,7 +95,6 @@ public class Application implements StreamingApplication
     {
       return flumeEvent;
     }
-
   }
 
   private Context getFlumeContext(Configuration conf, String prefix)
@@ -165,7 +174,7 @@ public class Application implements StreamingApplication
       deduper.setBucketManager(new TimeBasedBucketManagerImpl<FlumeEvent>());
 
       BucketManager.BucketStatsListener statsListener = new BucketManager.BucketStatsListener();
-      dag.setAttribute(deduper, OperatorContext.STATS_LISTENERS, Arrays.asList(new StatsListener[] {statsListener}));
+      dag.setAttribute(deduper, OperatorContext.STATS_LISTENERS, Arrays.asList(new StatsListener[]{statsListener}));
       dag.setAttribute(deduper, OperatorContext.APPLICATION_WINDOW_COUNT, 120);
 
       dag.addStream("FlumeEvents", feedPort, deduper.input);
