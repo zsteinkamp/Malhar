@@ -15,18 +15,13 @@
  */
 package com.datatorrent.lib.bucket;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.datatorrent.api.Stats;
-import com.datatorrent.api.StatsListener;
 
 /**
  * <p>
@@ -144,7 +139,7 @@ public interface BucketManager<T extends Bucketable>
    */
   BucketManager<T> cloneWithProperties();
 
-  void setCounters(@Nonnull Counters stats);
+  void setBucketCounters(@Nonnull BucketCounters stats);
 
   /**
    * Collects the un-written events of all the old managers and distributes the data to the new managers.<br/>
@@ -180,28 +175,19 @@ public interface BucketManager<T extends Bucketable>
 
   }
 
-  public static class Counters implements Stats.OperatorStats.CustomStats
+  public static class BucketCounters implements Stats.OperatorStats.CustomStats
   {
-    int numBucketsInMemory;
-    int numEvictedBuckets;
-    int numDeletedBuckets;
+    protected int numBucketsInMemory;
+    protected int numEvictedBuckets;
+    protected int numDeletedBuckets;
 
-    long numEventsCommittedPerWindow;
-    long numEventsInMemory;
+    protected long numEventsCommittedPerWindow;
+    protected long numEventsInMemory;
+    protected long numIgnoredEvents;
 
     public int getNumBucketsInMemory()
     {
       return numBucketsInMemory;
-    }
-
-    public long getNumEventsCommittedPerWindow()
-    {
-      return numEventsCommittedPerWindow;
-    }
-
-    public long getNumEventsInMemory()
-    {
-      return numEventsInMemory;
     }
 
     public int getNumEvictedBuckets()
@@ -214,28 +200,19 @@ public interface BucketManager<T extends Bucketable>
       return numDeletedBuckets;
     }
 
-  }
-
-  public static class CountersListener implements StatsListener, Serializable
-  {
-    @Override
-    public Response processStats(BatchedOperatorStats batchedOperatorStats)
+    public long getNumEventsCommittedPerWindow()
     {
-      List<Stats.OperatorStats> lastWindowedStats = batchedOperatorStats.getLastWindowedStats();
-      for (Stats.OperatorStats os : lastWindowedStats) {
-        if (os.customStats != null) {
-          if (os.customStats instanceof Counters) {
-            Counters cs = (Counters) os.customStats;
-            logger.debug("bucketStats {} {} {} {} {} {}", batchedOperatorStats.getOperatorId(), cs.numBucketsInMemory, cs.numDeletedBuckets,
-              cs.numEvictedBuckets, cs.numEventsInMemory, cs.numEventsCommittedPerWindow);
-          }
-        }
-      }
-      return null;
+      return numEventsCommittedPerWindow;
     }
 
-    private static final long serialVersionUID = 201404082336L;
-    private static transient final Logger logger = LoggerFactory.getLogger(CountersListener.class);
+    public long getNumEventsInMemory()
+    {
+      return numEventsInMemory;
+    }
 
+    public long getNumIgnoredEvents()
+    {
+      return numIgnoredEvents;
+    }
   }
 }

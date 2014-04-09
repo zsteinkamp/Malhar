@@ -105,7 +105,7 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
   private transient final Lock lock;
   @Nonnull
   private transient final MinMaxPriorityQueue<Bucket<T>> bucketHeap;
-  private transient Counters counters;
+  protected transient BucketCounters bucketCounters;
 
   BucketManagerImpl()
   {
@@ -198,9 +198,9 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
   }
 
   @Nonnull
-  public void setCounters(@Nonnull Counters counters)
+  public void setBucketCounters(@Nonnull BucketCounters bucketCounters)
   {
-    this.counters = counters;
+    this.bucketCounters = bucketCounters;
   }
 
   @Override
@@ -243,17 +243,14 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
 
               listener.bucketOffLoaded(oldBucket.bucketKey);
               bucketStore.deleteBucket(bucketIdx);
+              if (bucketCounters != null) {
+                bucketCounters.numDeletedBuckets++;
+              }
               logger.debug("deleted bucket {} {}", oldBucket.bucketKey, bucketIdx);
             }
 
-            long start = System.currentTimeMillis();
             Map<Object, T> bucketDataInStore = bucketStore.fetchBucket(bucketIdx);
-            if (logger.isDebugEnabled()) {
-              long timeToFetch = System.currentTimeMillis() - start;
-              if (timeToFetch > 0) {
-                logger.debug("time to fetch {}", timeToFetch);
-              }
-            }
+
             //Delete the least recently used bucket in memory if the noOfBucketsInMemory threshold is reached.
             if (evictionCandidates.size() + 1 > noOfBucketsInMemory) {
 
@@ -278,8 +275,8 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
                 evictionCandidates.remove(lruIdx);
                 buckets[lruIdx] = null;
                 listener.bucketOffLoaded(lruBucket.bucketKey);
-                if (counters != null) {
-                  counters.numEvictedBuckets++;
+                if (bucketCounters != null) {
+                  bucketCounters.numEvictedBuckets++;
                 }
                 logger.debug("evicted bucket {} {}", lruBucket.bucketKey, lruIdx);
               }
@@ -293,11 +290,10 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
             bucket.setWrittenEvents(bucketDataInStore);
             evictionCandidates.add(bucketIdx);
             listener.bucketLoaded(bucket);
-
-            if (counters != null) {
-              synchronized (counters) {
-                counters.numBucketsInMemory++;
-                counters.numEventsInMemory += bucketDataInStore.size();
+            if (bucketCounters != null) {
+              synchronized (bucketCounters) {
+                bucketCounters.numBucketsInMemory++;
+                bucketCounters.numEventsInMemory += bucketDataInStore.size();
               }
             }
             bucketHeap.clear();
@@ -318,7 +314,6 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
     logger.debug("bucket properties {}, {}, {}, {}", noOfBuckets, noOfBucketsInMemory, maxNoOfBucketsInMemory, millisPreventingBucketEviction);
     buckets = (Bucket<T>[]) Array.newInstance(Bucket.class, noOfBuckets);
     this.listener = Preconditions.checkNotNull(listener, "storageHandler");
-
     this.bucketStore.setup(context);
 
     //Create buckets for unwritten events which were check-pointed
@@ -361,9 +356,9 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
     }
 
     bucket.addNewEvent(event.getEventKey(), writeEventKeysOnly ? null : event);
-    if (counters != null) {
-      synchronized (counters) {
-        counters.numEventsInMemory++;
+    if (bucketCounters != null) {
+      synchronized (bucketCounters) {
+        bucketCounters.numEventsInMemory++;
       }
     }
   }
@@ -380,8 +375,8 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
       bucket.transferDataFromMemoryToStore();
       evictionCandidates.add(entry.getKey());
     }
-    if(counters !=null){
-      counters.numEventsCommittedPerWindow = eventsCount;
+    if (bucketCounters != null) {
+      bucketCounters.numEventsCommittedPerWindow = eventsCount;
     }
     long start = System.currentTimeMillis();
     try {
