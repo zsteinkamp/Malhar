@@ -15,6 +15,7 @@
  */
 package com.datatorrent.lib.bucket;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -215,7 +216,7 @@ public interface BucketManager<T extends Bucketable>
 
   }
 
-  public static class BucketStatsListener implements StatsListener
+  public static class BucketStatsListener implements StatsListener, Serializable
   {
     @Override
     public Response processStats(BatchedOperatorStats batchedOperatorStats)
@@ -235,7 +236,7 @@ public interface BucketManager<T extends Bucketable>
       }
       return null;
     }
-
+    private static final long serialVersionUID = 201404082336L;
     private static transient final Logger logger = LoggerFactory.getLogger(BucketStatsListener.class);
 
   }
