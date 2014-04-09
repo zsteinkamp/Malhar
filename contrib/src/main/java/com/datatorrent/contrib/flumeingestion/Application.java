@@ -16,10 +16,7 @@
 package com.datatorrent.contrib.flumeingestion;
 
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Map.Entry;
-
-import javax.annotation.Nonnull;
 
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -32,8 +29,6 @@ import org.joda.time.format.DateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Maps;
-
 import com.datatorrent.api.*;
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.Context.PortContext;
@@ -42,10 +37,10 @@ import com.datatorrent.api.annotation.ShipContainingJars;
 
 import com.datatorrent.flume.operator.AbstractFlumeInputOperator;
 import com.datatorrent.flume.storage.EventCodec;
-import com.datatorrent.lib.bucket.BucketManager;
-import com.datatorrent.lib.bucket.HdfsBucketStore;
 import com.datatorrent.lib.bucket.TimeBasedBucketManagerImpl;
-import com.datatorrent.lib.dedup.Deduper;
+import com.datatorrent.lib.dedup.DeduperWithHdfsStore;
+
+import static com.datatorrent.lib.dedup.Deduper.CountersListener;
 
 @ApplicationAnnotation(name = "FlumeIngestion")
 public class Application implements StreamingApplication
@@ -66,30 +61,8 @@ public class Application implements StreamingApplication
     }
   }
 
-  /**
-   * A deduper which uses HDFS as its backing store.
-   */
-  public static class FlumeEventDeduper extends Deduper<FlumeEvent, FlumeEvent>
+  public static class FlumeEventDeduper extends DeduperWithHdfsStore<FlumeEvent, FlumeEvent>
   {
-    private String bucketsRoot = "buckets";
-
-    public void setBucketsRoot(@Nonnull String bucketsRoot)
-    {
-      this.bucketsRoot = bucketsRoot;
-    }
-
-    @Override
-    protected com.datatorrent.lib.bucket.Context getBucketContext(com.datatorrent.api.Context.OperatorContext context)
-    {
-      Map<String, Object> parameters = Maps.newHashMap();
-      parameters.put(HdfsBucketStore.STORE_ROOT, bucketsRoot);
-      parameters.put(HdfsBucketStore.OPERATOR_ID, context.getId());
-      parameters.put(HdfsBucketStore.PARTITION_KEYS, partitionKeys);
-      parameters.put(HdfsBucketStore.PARTITION_MASK, partitionMask);
-
-      return new com.datatorrent.lib.bucket.Context(parameters);
-    }
-
     @Override
     protected FlumeEvent convert(FlumeEvent flumeEvent)
     {
@@ -173,7 +146,7 @@ public class Application implements StreamingApplication
       FlumeEventDeduper deduper = dag.addOperator("Deduper", new FlumeEventDeduper());
       deduper.setBucketManager(new TimeBasedBucketManagerImpl<FlumeEvent>());
 
-      BucketManager.CountersListener statsListener = new BucketManager.CountersListener();
+      CountersListener statsListener = new CountersListener();
       dag.setAttribute(deduper, OperatorContext.STATS_LISTENERS, Arrays.asList(new StatsListener[]{statsListener}));
       dag.setAttribute(deduper, OperatorContext.APPLICATION_WINDOW_COUNT, 120);
 
