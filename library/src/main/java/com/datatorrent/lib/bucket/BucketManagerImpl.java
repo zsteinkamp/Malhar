@@ -371,22 +371,18 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
   @Override
   public void endWindow(long window)
   {
-    if (bucketStats != null) {
-      bucketStats.numEventsCommittedPerWindow = 0;
-    }
-
     Map<Integer, Map<Object, T>> dataToStore = Maps.newHashMap();
-
+    long eventsCount = 0;
     for (Map.Entry<Integer, Bucket<T>> entry : dirtyBuckets.entrySet()) {
       Bucket<T> bucket = entry.getValue();
       dataToStore.put(entry.getKey(), bucket.getUnwrittenEvents());
-      if (bucketStats != null) {
-        bucketStats.numEventsCommittedPerWindow += bucket.countOfUnwrittenEvents();
-      }
+      eventsCount += bucket.countOfUnwrittenEvents();
       bucket.transferDataFromMemoryToStore();
       evictionCandidates.add(entry.getKey());
     }
-
+    if(bucketStats!=null){
+      bucketStats.numEventsCommittedPerWindow = eventsCount;
+    }
     long start = System.currentTimeMillis();
     try {
       bucketStore.storeBucketData(window, dataToStore);
