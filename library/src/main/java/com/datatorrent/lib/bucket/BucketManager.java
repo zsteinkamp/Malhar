@@ -144,7 +144,7 @@ public interface BucketManager<T extends Bucketable>
    */
   BucketManager<T> cloneWithProperties();
 
-  void setBucketStats(@Nonnull BucketStats stats);
+  void setCounters(@Nonnull Counters stats);
 
   /**
    * Collects the un-written events of all the old managers and distributes the data to the new managers.<br/>
@@ -180,7 +180,7 @@ public interface BucketManager<T extends Bucketable>
 
   }
 
-  public static class BucketStats implements Stats.OperatorStats.CustomStats
+  public static class Counters implements Stats.OperatorStats.CustomStats
   {
     int numBucketsInMemory;
     int numEvictedBuckets;
@@ -216,28 +216,26 @@ public interface BucketManager<T extends Bucketable>
 
   }
 
-  public static class BucketStatsListener implements StatsListener, Serializable
+  public static class CountersListener implements StatsListener, Serializable
   {
     @Override
     public Response processStats(BatchedOperatorStats batchedOperatorStats)
     {
-      Stats.OperatorStats.CustomStats lastStat = null;
       List<Stats.OperatorStats> lastWindowedStats = batchedOperatorStats.getLastWindowedStats();
       for (Stats.OperatorStats os : lastWindowedStats) {
         if (os.customStats != null) {
-          lastStat = os.customStats;
-          logger.debug("Received custom stats = {}", lastStat);
+          if (os.customStats instanceof Counters) {
+            Counters cs = (Counters) os.customStats;
+            logger.debug("bucketStats {} {} {} {} {} {}", batchedOperatorStats.getOperatorId(), cs.numBucketsInMemory, cs.numDeletedBuckets,
+              cs.numEvictedBuckets, cs.numEventsInMemory, cs.numEventsCommittedPerWindow);
+          }
         }
-      }
-      if (lastStat instanceof BucketStats) {
-        BucketStats cs = (BucketStats) lastStat;
-        logger.debug("bucketStats {} {} {} {} {} {}", batchedOperatorStats.getOperatorId(), cs.numBucketsInMemory, cs.numDeletedBuckets,
-          cs.numEvictedBuckets, cs.numEventsInMemory, cs.numEventsCommittedPerWindow);
       }
       return null;
     }
+
     private static final long serialVersionUID = 201404082336L;
-    private static transient final Logger logger = LoggerFactory.getLogger(BucketStatsListener.class);
+    private static transient final Logger logger = LoggerFactory.getLogger(CountersListener.class);
 
   }
 }

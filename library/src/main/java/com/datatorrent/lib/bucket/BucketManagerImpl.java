@@ -105,7 +105,7 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
   private transient final Lock lock;
   @Nonnull
   private transient final MinMaxPriorityQueue<Bucket<T>> bucketHeap;
-  private transient BucketStats bucketStats;
+  private transient Counters counters;
 
   BucketManagerImpl()
   {
@@ -198,9 +198,9 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
   }
 
   @Nonnull
-  public void setBucketStats(@Nonnull BucketStats bucketStats)
+  public void setCounters(@Nonnull Counters counters)
   {
-    this.bucketStats = bucketStats;
+    this.counters = counters;
   }
 
   @Override
@@ -278,8 +278,8 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
                 evictionCandidates.remove(lruIdx);
                 buckets[lruIdx] = null;
                 listener.bucketOffLoaded(lruBucket.bucketKey);
-                if (bucketStats != null) {
-                  bucketStats.numEvictedBuckets++;
+                if (counters != null) {
+                  counters.numEvictedBuckets++;
                 }
                 logger.debug("evicted bucket {} {}", lruBucket.bucketKey, lruIdx);
               }
@@ -294,10 +294,10 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
             evictionCandidates.add(bucketIdx);
             listener.bucketLoaded(bucket);
 
-            if (bucketStats != null) {
-              synchronized (bucketStats) {
-                bucketStats.numBucketsInMemory++;
-                bucketStats.numEventsInMemory += bucketDataInStore.size();
+            if (counters != null) {
+              synchronized (counters) {
+                counters.numBucketsInMemory++;
+                counters.numEventsInMemory += bucketDataInStore.size();
               }
             }
             bucketHeap.clear();
@@ -361,9 +361,9 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
     }
 
     bucket.addNewEvent(event.getEventKey(), writeEventKeysOnly ? null : event);
-    if (bucketStats != null) {
-      synchronized (bucketStats) {
-        bucketStats.numEventsInMemory++;
+    if (counters != null) {
+      synchronized (counters) {
+        counters.numEventsInMemory++;
       }
     }
   }
@@ -380,8 +380,8 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
       bucket.transferDataFromMemoryToStore();
       evictionCandidates.add(entry.getKey());
     }
-    if(bucketStats!=null){
-      bucketStats.numEventsCommittedPerWindow = eventsCount;
+    if(counters !=null){
+      counters.numEventsCommittedPerWindow = eventsCount;
     }
     long start = System.currentTimeMillis();
     try {
