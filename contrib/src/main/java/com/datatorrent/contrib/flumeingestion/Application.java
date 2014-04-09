@@ -40,6 +40,7 @@ import com.datatorrent.api.annotation.ShipContainingJars;
 
 import com.datatorrent.flume.operator.AbstractFlumeInputOperator;
 import com.datatorrent.flume.storage.EventCodec;
+import com.datatorrent.lib.bucket.BucketManager;
 import com.datatorrent.lib.bucket.HdfsBucketStore;
 import com.datatorrent.lib.bucket.TimeBasedBucketManagerImpl;
 import com.datatorrent.lib.dedup.Deduper;
@@ -162,7 +163,11 @@ public class Application implements StreamingApplication
     if (!skipDeduper) {
       FlumeEventDeduper deduper = dag.addOperator("Deduper", new FlumeEventDeduper());
       deduper.setBucketManager(new TimeBasedBucketManagerImpl<FlumeEvent>());
+
+      BucketManager.BucketStatsListener statsListener = new BucketManager.BucketStatsListener();
+      dag.setAttribute(deduper, OperatorContext.STATS_LISTENERS, Arrays.asList(new StatsListener[] {statsListener}));
       dag.setAttribute(deduper, OperatorContext.APPLICATION_WINDOW_COUNT, 120);
+
       dag.addStream("FlumeEvents", feedPort, deduper.input);
       dag.addStream("DedupedEvents", deduper.output, blackHole.input);
     }

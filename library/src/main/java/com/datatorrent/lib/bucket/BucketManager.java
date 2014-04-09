@@ -18,7 +18,14 @@ package com.datatorrent.lib.bucket;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.datatorrent.api.Stats;
+import com.datatorrent.api.StatsListener;
 
 /**
  * <p>
@@ -136,6 +143,8 @@ public interface BucketManager<T extends Bucketable>
    */
   BucketManager<T> cloneWithProperties();
 
+  void setBucketStats(@Nonnull BucketStats stats);
+
   /**
    * Collects the un-written events of all the old managers and distributes the data to the new managers.<br/>
    * The partition to which an event belongs to depends on the event key.
@@ -167,6 +176,67 @@ public interface BucketManager<T extends Bucketable>
      * @param bucketKey key of the bucket which was off-loaded.
      */
     void bucketOffLoaded(long bucketKey);
+
+  }
+
+  public static class BucketStats implements Stats.OperatorStats.CustomStats
+  {
+    int numBucketsInMemory;
+    int numEvictedBuckets;
+    int numDeletedBuckets;
+
+    long numEventsCommittedPerWindow;
+    long numEventsInMemory;
+
+    public int getNumBucketsInMemory()
+    {
+      return numBucketsInMemory;
+    }
+
+    public long getNumEventsCommittedPerWindow()
+    {
+      return numEventsCommittedPerWindow;
+    }
+
+    public long getNumEventsInMemory()
+    {
+      return numEventsInMemory;
+    }
+
+    public int getNumEvictedBuckets()
+    {
+      return numEvictedBuckets;
+    }
+
+    public int getNumDeletedBuckets()
+    {
+      return numDeletedBuckets;
+    }
+
+  }
+
+  public static class BucketStatsListener implements StatsListener
+  {
+    @Override
+    public Response processStats(BatchedOperatorStats batchedOperatorStats)
+    {
+      Stats.OperatorStats.CustomStats lastStat = null;
+      List<Stats.OperatorStats> lastWindowedStats = batchedOperatorStats.getLastWindowedStats();
+      for (Stats.OperatorStats os : lastWindowedStats) {
+        if (os.customStats != null) {
+          lastStat = os.customStats;
+          logger.debug("Received custom stats = {}", lastStat);
+        }
+      }
+      if (lastStat instanceof BucketStats) {
+        BucketStats cs = (BucketStats) lastStat;
+        logger.debug("bucketStats {} {} {} {} {} {}", batchedOperatorStats.getOperatorId(), cs.numBucketsInMemory, cs.numDeletedBuckets,
+          cs.numEvictedBuckets, cs.numEventsInMemory, cs.numEventsCommittedPerWindow);
+      }
+      return null;
+    }
+
+    private static transient final Logger logger = LoggerFactory.getLogger(BucketStatsListener.class);
 
   }
 }

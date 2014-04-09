@@ -105,6 +105,7 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
   private transient final Lock lock;
   @Nonnull
   private transient final MinMaxPriorityQueue<Bucket<T>> bucketHeap;
+  private transient BucketStats bucketStats;
 
   BucketManagerImpl()
   {
@@ -196,6 +197,12 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
     this.bucketStore = bucketStore;
   }
 
+  @Nonnull
+  public void setBucketStats(@Nonnull BucketStats bucketStats)
+  {
+    this.bucketStats = bucketStats;
+  }
+
   @Override
   public void shutdownService()
   {
@@ -241,10 +248,11 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
 
             long start = System.currentTimeMillis();
             Map<Object, T> bucketDataInStore = bucketStore.fetchBucket(bucketIdx);
-            if(logger.isDebugEnabled()){
+            if (logger.isDebugEnabled()) {
               long timeToFetch = System.currentTimeMillis() - start;
-              if(timeToFetch > 0)
+              if (timeToFetch > 0) {
                 logger.debug("time to fetch {}", timeToFetch);
+              }
             }
             //Delete the least recently used bucket in memory if the noOfBucketsInMemory threshold is reached.
             if (evictionCandidates.size() + 1 > noOfBucketsInMemory) {
@@ -270,6 +278,9 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
                 evictionCandidates.remove(lruIdx);
                 buckets[lruIdx] = null;
                 listener.bucketOffLoaded(lruBucket.bucketKey);
+                if (bucketStats != null) {
+                  bucketStats.numEvictedBuckets++;
+                }
                 logger.debug("evicted bucket {} {}", lruBucket.bucketKey, lruIdx);
               }
             }
@@ -282,6 +293,13 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
             bucket.setWrittenEvents(bucketDataInStore);
             evictionCandidates.add(bucketIdx);
             listener.bucketLoaded(bucket);
+
+            if (bucketStats != null) {
+              synchronized (bucketStats) {
+                bucketStats.numBucketsInMemory++;
+                bucketStats.numEventsInMemory += bucketDataInStore.size();
+              }
+            }
             bucketHeap.clear();
           }
         }
@@ -300,6 +318,7 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
     logger.debug("bucket properties {}, {}, {}, {}", noOfBuckets, noOfBucketsInMemory, maxNoOfBucketsInMemory, millisPreventingBucketEviction);
     buckets = (Bucket<T>[]) Array.newInstance(Bucket.class, noOfBuckets);
     this.listener = Preconditions.checkNotNull(listener, "storageHandler");
+
     this.bucketStore.setup(context);
 
     //Create buckets for unwritten events which were check-pointed
@@ -342,16 +361,28 @@ public class BucketManagerImpl<T extends Bucketable> implements BucketManager<T>
     }
 
     bucket.addNewEvent(event.getEventKey(), writeEventKeysOnly ? null : event);
+    if (bucketStats != null) {
+      synchronized (bucketStats) {
+        bucketStats.numEventsInMemory++;
+      }
+    }
   }
 
   @Override
   public void endWindow(long window)
   {
+    if (bucketStats != null) {
+      bucketStats.numEventsCommittedPerWindow = 0;
+    }
+
     Map<Integer, Map<Object, T>> dataToStore = Maps.newHashMap();
 
     for (Map.Entry<Integer, Bucket<T>> entry : dirtyBuckets.entrySet()) {
       Bucket<T> bucket = entry.getValue();
       dataToStore.put(entry.getKey(), bucket.getUnwrittenEvents());
+      if (bucketStats != null) {
+        bucketStats.numEventsCommittedPerWindow += bucket.countOfUnwrittenEvents();
+      }
       bucket.transferDataFromMemoryToStore();
       evictionCandidates.add(entry.getKey());
     }

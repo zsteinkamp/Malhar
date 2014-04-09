@@ -142,6 +142,10 @@ public abstract class Deduper<INPUT extends Bucketable, OUTPUT>
   {
     sleepTimeMillis = context.getValue(OperatorContext.SPIN_MILLIS);
 
+    BucketManager.BucketStats stats = new BucketManager.BucketStats();
+    context.setCustomStats(stats);
+    bucketManager.setBucketStats(stats);
+
     bucketManager.startService(getBucketContext(context), this);
     logger.debug("bucket keys at startup {}", waitingEvents.keySet());
     for (long bucketKey : waitingEvents.keySet()) {
