@@ -144,7 +144,9 @@ public class Application implements StreamingApplication
      */
     if (!skipDeduper) {
       FlumeEventDeduper deduper = dag.addOperator("Deduper", new FlumeEventDeduper());
-      deduper.setBucketManager(new TimeBasedBucketManagerImpl<FlumeEvent>());
+      TimeBasedBucketManagerImpl<FlumeEvent> bucketManager = new TimeBasedBucketManagerImpl<FlumeEvent>();
+      bucketManager.initialize();
+      deduper.setBucketManager(bucketManager);
 
       CountersListener statsListener = new CountersListener();
       dag.setAttribute(deduper, OperatorContext.STATS_LISTENERS, Arrays.asList(new StatsListener[]{statsListener}));
