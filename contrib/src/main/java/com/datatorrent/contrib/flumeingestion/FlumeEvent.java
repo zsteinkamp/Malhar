@@ -85,7 +85,6 @@ public class FlumeEvent implements Bucketable, Event
         event.id = new Slice(row, 0, sliceLengh);
         event.time = DATE_PARSER.parseMillis(new String(row, dateStart, i - dateStart - 1));
         event.dimensionsOffset = i;
-        logger.debug("flume event {}", event);
         return event;
       }
     }
