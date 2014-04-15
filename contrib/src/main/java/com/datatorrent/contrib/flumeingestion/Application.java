@@ -36,6 +36,7 @@ import com.datatorrent.api.annotation.ApplicationAnnotation;
 import com.datatorrent.api.annotation.ShipContainingJars;
 
 import com.datatorrent.flume.operator.AbstractFlumeInputOperator;
+import com.datatorrent.flume.storage.EventCodec;
 import com.datatorrent.lib.bucket.TimeBasedBucketManagerImpl;
 import com.datatorrent.lib.dedup.DeduperWithHdfsStore;
 
@@ -126,22 +127,18 @@ public class Application implements StreamingApplication
       feedPort = hdfsInput.output;
     }
     else {
-      DummyInputOperator dummyInputOperator = dag.addOperator("Dummy", new DummyInputOperator());
-      feedPort = dummyInputOperator.output;
+      FlumeInputOperator inputOperator = dag.addOperator("FlumeIngestor", new FlumeInputOperator());
+      inputOperator.setConnectAddresses(dtFlumeAdapterAddresses);
+      inputOperator.setCodec(new EventCodec());
+
+      /* initialize auto discovery mechanism for the operator */
+      FlumeInputOperator.ZKStatsListner statsListener = new FlumeInputOperator.ZKStatsListner();
+      statsListener.configure(getFlumeContext(conf, "FlumeIngestor.DiscoveryContext."));
+      statsListener.setIntervalMillis(60 * 1000);
+      dag.setAttribute(inputOperator, OperatorContext.STATS_LISTENERS, Arrays.asList(new StatsListener[]{statsListener}));
+
+      feedPort = inputOperator.output;
     }
-//    else {
-//      FlumeInputOperator inputOperator = dag.addOperator("FlumeIngestor", new FlumeInputOperator());
-//      inputOperator.setConnectAddresses(dtFlumeAdapterAddresses);
-//      inputOperator.setCodec(new EventCodec());
-//
-//      /* initialize auto discovery mechanism for the operator */
-//      FlumeInputOperator.ZKStatsListner statsListener = new FlumeInputOperator.ZKStatsListner();
-//      statsListener.configure(getFlumeContext(conf, "FlumeIngestor.DiscoveryContext."));
-//      statsListener.setIntervalMillis(60 * 1000);
-//      dag.setAttribute(inputOperator, OperatorContext.STATS_LISTENERS, Arrays.asList(new StatsListener[]{statsListener}));
-//
-//      feedPort = inputOperator.output;
-//    }
 
     BlackHole blackHole = dag.addOperator("BlackHole", new BlackHole());
 
