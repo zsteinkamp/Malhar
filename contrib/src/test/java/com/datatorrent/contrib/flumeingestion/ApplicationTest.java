@@ -26,8 +26,8 @@ public class ApplicationTest
   public void test()
   {
     Configuration configuration = new Configuration(false);
-    configuration.setBoolean(Application.SIMULATE_INPUT_OPERATOR, true);
-    configuration.set(Application.class.getName() + ".InputSimulator.filePath", "/Users/chandni/test_data/flume_test_data");
+    configuration.set(Application.INPUT_OPERATOR, "simulate");
+    configuration.set(Application.class.getName() + ".InputSimulator.filePath", "resources/test_data/flume_test_data");
     LocalMode.runApp(new Application(), configuration, Integer.MAX_VALUE);
   }
 }
