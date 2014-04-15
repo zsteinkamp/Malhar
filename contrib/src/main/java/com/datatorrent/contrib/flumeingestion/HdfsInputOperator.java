@@ -24,6 +24,7 @@ import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.*;
 import org.apache.hadoop.fs.FileSystem;
+import org.joda.time.format.DateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,9 +36,10 @@ import com.datatorrent.api.InputOperator;
 import com.datatorrent.api.annotation.OutputPortFieldAnnotation;
 import com.datatorrent.api.annotation.ShipContainingJars;
 
+import com.datatorrent.lib.bucket.Bucketable;
 import com.datatorrent.lib.io.fs.AbstractFileInputOperator;
 
-@ShipContainingJars(classes = {CompressorStreamFactory.class})
+@ShipContainingJars(classes = {CompressorStreamFactory.class, DateTimeFormat.class, Bucketable.class})
 public class HdfsInputOperator implements InputOperator
 {
   public static final byte FIELD_SEPARATOR = 2;
