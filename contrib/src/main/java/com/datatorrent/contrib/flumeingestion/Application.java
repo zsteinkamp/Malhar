@@ -47,7 +47,7 @@ public class Application implements StreamingApplication
 {
   public static final byte FIELD_SEPARATOR = 1;
   public static final String FLUME_SINK_ADDRESSES = "flumeSinkAddresses";
-  public static final String SIMULATE_INPUT_OPERATOR = "simulateInputOperator";
+  public static final String INPUT_OPERATOR = "inputOperator";
   public static final String SKIP_DEDUPER = "skipDeduper";
 
   @ShipContainingJars(classes = {Configurable.class, RetryPolicy.class, ServiceInstance.class, Context.class, CuratorFramework.class, DateTimeFormat.class})
@@ -57,7 +57,7 @@ public class Application implements StreamingApplication
     @Override
     public FlumeEvent convert(Event event)
     {
-      return FlumeEvent.from(event.getBody(), FIELD_SEPARATOR);
+      return FlumeEvent.from(event.getBody(), FIELD_SEPARATOR, 1);
     }
   }
 
@@ -106,7 +106,7 @@ public class Application implements StreamingApplication
   @Override
   public void populateDAG(DAG dag, Configuration conf)
   {
-    boolean simulate = conf.getBoolean(SIMULATE_INPUT_OPERATOR, false);
+    String inputType = conf.get(INPUT_OPERATOR, "simulate");
     boolean skipDeduper = conf.getBoolean(SKIP_DEDUPER, false);
 
     String[] dtFlumeAdapterAddresses = conf.getStrings(FLUME_SINK_ADDRESSES, new String[]{"0:localhost:8080"});
@@ -117,11 +117,14 @@ public class Application implements StreamingApplication
     dag.setAttribute(PortContext.QUEUE_CAPACITY, 16 * 1024);
 
     DefaultOutputPort<FlumeEvent> feedPort;
-    if (simulate) {
+    if (inputType.equals("simulate")) {
       InputSimulator simulator = dag.addOperator("InputSimulator", new InputSimulator());
-      simulator.setRate(2500);
       simulator.setFilePath(conf.get(getClass().getName() + ".InputSimulator.filePath", "dt_test_data"));
       feedPort = simulator.output;
+    }
+    else if (inputType.equals("hdfs")) {
+      HdfsInputOperator hdfsInput = dag.addOperator("HdfsInput", new HdfsInputOperator());
+      feedPort = hdfsInput.output;
     }
     else {
       FlumeInputOperator inputOperator = dag.addOperator("FlumeIngestor", new FlumeInputOperator());

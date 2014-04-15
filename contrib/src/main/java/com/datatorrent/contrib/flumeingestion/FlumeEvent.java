@@ -49,16 +49,17 @@ public class FlumeEvent implements Bucketable, Event
     /* needed for Kryo serialization */
   }
 
-  public static FlumeEvent from(byte[] row, byte separator)
+  public static FlumeEvent from(byte[] row, byte separator, int timeColumn)
   {
     final int rowsize = row.length;
-
+    int col = 0;
     /*
      * Lets get the id out of the current record
      */
     int sliceLengh = -1;
     while (++sliceLengh < rowsize) {
       if (row[sliceLengh] == separator) {
+        col++;
         break;
       }
     }
@@ -67,7 +68,12 @@ public class FlumeEvent implements Bucketable, Event
     int i = sliceLengh + 1;
     while (i < rowsize) {
       if (row[i++] == separator) {
-        break;
+        if (col == timeColumn) {
+          break;
+        }
+        else {
+          col++;
+        }
       }
     }
 
@@ -79,6 +85,7 @@ public class FlumeEvent implements Bucketable, Event
         event.id = new Slice(row, 0, sliceLengh);
         event.time = DATE_PARSER.parseMillis(new String(row, dateStart, i - dateStart - 1));
         event.dimensionsOffset = i;
+        logger.debug("flume event {}", event);
         return event;
       }
     }

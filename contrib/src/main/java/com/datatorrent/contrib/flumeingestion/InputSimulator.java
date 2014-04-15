@@ -87,7 +87,7 @@ public class InputSimulator extends BaseOperator implements InputOperator
 
     String line;
     while ((line = lineReader.readLine()) != null) {
-      FlumeEvent event = FlumeEvent.from(line.getBytes(), Application.FIELD_SEPARATOR);
+      FlumeEvent event = FlumeEvent.from(line.getBytes(), Application.FIELD_SEPARATOR, 1);
       cache.add(event);
     }
   }
