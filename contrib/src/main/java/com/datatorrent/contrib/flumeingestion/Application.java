@@ -126,7 +126,7 @@ public class Application implements StreamingApplication
       feedPort = hdfsInput.output;
     }
     else {
-      DummyInputOperator dummyInputOperator = new DummyInputOperator();
+      DummyInputOperator dummyInputOperator = dag.addOperator("Dummy", new DummyInputOperator());
       feedPort = dummyInputOperator.output;
     }
 //    else {
