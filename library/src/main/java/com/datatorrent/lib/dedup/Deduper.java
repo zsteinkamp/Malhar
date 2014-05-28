@@ -442,7 +442,6 @@ public abstract class Deduper<INPUT extends Bucketable, OUTPUT>
                 cs.getNumIgnoredEvents(), cs.getNumDuplicateEvents(), cs.getLow(), cs.getHigh());
 
               countersPerOperator.put(batchedOperatorStats.getOperatorId(), cs);
-              ;
             }
           }
         }
