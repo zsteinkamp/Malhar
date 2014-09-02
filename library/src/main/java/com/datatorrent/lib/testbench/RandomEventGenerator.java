@@ -25,34 +25,39 @@ import javax.validation.constraints.Min;
 
 /**
  *
- * Generates synthetic load. Creates tuples using random numbers and keeps emitting them on the output port string_data and integer_data<p>
- * <br>
+ * Generates synthetic load. Creates tuples using random numbers and keeps emitting them on the output port string_data and integer_data
+ *
  * The load is generated as per config parameters. This class is mainly meant for testing nodes by creating a random number within
  * a range at a very high throughput. This node does not need to be windowed. It would just create tuple stream upto the limit set
- * by the config parameters.<br>
- * <br>
- * <b>Tuple Schema</b>: Has two choices Integer, or String<br><br>
- * <b>Port Interface</b>
- * <b>string_data</b>: Emits String tuples<br>
- * <b>integer_data</b>: Emits Integer tuples<br>
- * <b>Properties</b>:
- * <b>key</b> is an optional parameter, the generator sends an HashMap if key is specified<br>
- * <b>min_value</b> is the minimum value of the range of numbers. Default is 0<br>
- * <b>max_value</b> is the maximum value of the range of numbers. Default is 100<br>
- * <b>tuples_burst</b> is the total amount of tuples sent by the node before handing over control. The default
- * value is 10000. A high value does not help as if window has space the control is immediately returned for mode processing<br>
- * <b>string_schema</b> controls the tuple schema. For string set it to "true". By default it is "false" (i.e. Integer schema)<br>
- * <br>
- * Compile time checks are:<br>
- * <b>min_value</b> has to be an integer<br>
- * <b>max_value</b> has to be an integer and has to be >= min_value<br>
- * <b>tuples_burst</b>If specified must be an integer<br>
- * <br>
- * <b>Benchmarks</b>: Blast as many tuples as possible in inline mode<br>
- * This node has been benchmarked at over 10 million tuples/second in local/inline mode<br>
- *<br>
- * Compile time error checking includes<br>
- * <br>
+ * by the config parameters.
+ *
+ * **Tuple Schema**: Has two choices Integer, or String
+ *
+ * **Port Interface**
+ *
+ * * **string_data**: Emits String tuples
+ * * **integer_data**: Emits Integer tuples
+ *
+ * **Properties**:
+ *
+ * * **key** is an optional parameter, the generator sends an HashMap if key is specified
+ * * **min_value** is the minimum value of the range of numbers. Default is 0
+ * * **max_value** is the maximum value of the range of numbers. Default is 100
+ * * **tuples_burst** is the total amount of tuples sent by the node before handing over control. The default
+ *   value is 10000. A high value does not help as if window has space the control is immediately returned for mode processing
+ * * **string_schema** controls the tuple schema. For string set it to "true". By default it is "false" (i.e. Integer schema)
+ *
+ * Compile time checks are:
+ *
+ * * **min_value** has to be an integer
+ * * **max_value** has to be an integer and has to be >= min_value
+ * * **tuples_burst** If specified must be an integer
+ * 
+ * **Benchmarks**: Blast as many tuples as possible in inline mode
+ *
+ * * This node has been benchmarked at over 10 million tuples/second in local/inline mode
+ *
+ * Compile time error checking includes
  *
  * @since 0.3.2
  */

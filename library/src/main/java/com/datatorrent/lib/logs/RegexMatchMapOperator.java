@@ -28,46 +28,57 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * <p>Use this operator to parse unstructured log data into named fields.</p>
+ * Use this operator to parse unstructured log data into named fields.
  *
- * <p>Uses a regex with named capturing groups (http://www.regular-expressions.info/named.html) to extract portions of a string read
- * from the input port into a Map<String,String>. The capturing group name is used as the key name. The captured value is used as
- * the value.</p>
+ * Uses a regex with [named capturing groups](http://www.regular-expressions.info/named.html) to extract portions of a string read
+ * from the input port into a `Map<String,String>`. The capturing group name is used as the key name. The captured value is used
+ * as the value.
  *
- * <p>For example, given the input:
- *   <br><code>12345 "foo bar" baz;goober</code></p>
+ * For example, given the input:
  *
- * <p>And the regular expression:
- *   <br><code>(?&lt;id&gt;\d+) "(?&lt;username&gt;[^"]+)" (?&lt;action&gt;[^;]+);(?&lt;cookie&gt;.+)</code></p>
+ * ```
+ * 12345 "foo bar" baz;goober
+ * ```
  *
- * <p>The operator would emit a Map containing:<br>
- *  <table>
- *  <tr><th>KEY</th><th>VAL</th></tr>
- *  <tr><td>id</td><td>12345</td></tr>
- *  <tr><td>username</td><td>foo bar</td></tr>
- *  <tr><td>action</td><td>baz</td></tr>
- *  <tr><td>cookie</td><td>goober</td></tr>
- *  </table>
+ * And the regular expression:
  *
- * <p>In the case where the regex does not match the input, nothing is emitted.</p>
+ * ```
+ * (?<id>\d+) "(?<username>[^"]+)" (?<action>[^;]+);(?<cookie>.+)
+ * ```
  *
- * <p>Uses the named-regexp library originally from Google, but now maintained
- * by Anthony Trinh (https://github.com/tony19/named-regexp).</p>
+ * The operator would emit a `Map` containing:
  *
- * This is a passthrough operator<br>
- * <br>
- * <b>StateFull : No </b><br>
- * <b>Partitions : Yes</b>, No dependency among input values. <br>
- * <br>
- * <b>Ports</b>:<br>
- * <b>data</b>: expects String<br>
- * <b>output</b>: emits Map<br>
- * <br>
- * <b>Properties</b>:<br>
- * <b>regex</b>: defines the regex <br>
+ * key      | val
+ * ---------|--------
+ * id       | 12345
+ * username | foo bar
+ * action   | baz
+ * cookie   | goober
+ * 
+ * In the case where the regex does not match the input, nothing is emitted.
  *
- * @since 1.0.5
- */
+ * Uses the named-regexp library originally from Google, but now maintained
+ * by [Anthony Trinh](https://github.com/tony19/named-regexp).
+ *
+ * This is a passthrough operator.
+ *
+ * * __Stateful__ : No
+ * * __Partitions__ : Yes, No dependency among input values.
+ * * __Ports__
+ *     * __data:__ expects String
+ *     * __output:__ emits Map
+ * * __Properties__
+ *     * __regex:__ defines the regex (must use named capturing groups)
+ *
+ * Here is an example UML diagram
+ * ==============================
+ * ![Example Diagram](example.png)
+ *
+ * @uml example.png
+ * Alice -> Bob: Authentication Request
+ * Bob --> Alice: Authentication Response
+ *
+ * @since 1.0.5 */
 @Stateless
 public class RegexMatchMapOperator extends BaseOperator
 {
