@@ -70,9 +70,9 @@ import com.datatorrent.lib.streamquery.condition.Condition;
  * </pre>
  * <br>
  * <b>Ports : </b> <br>
- * <b>inport1 : </b> expects tuple Map<String, Object>. <br>
- * <b>inport2 : </b> expects tuple Map<String, Object>. <br>
- * <b>outport : </b> emits joined tuple Map<String, Object>. <br>
+ * <b>inport1 : </b> expects tuple Map&lt;String, Object&gt;. <br>
+ * <b>inport2 : </b> expects tuple Map&lt;String, Object&gt;. <br>
+ * <b>outport : </b> emits joined tuple Map&lt;String, Object&gt;. <br>
  * <br>
  * <b> StateFull : </b> Yes, values are aggregated over application window.  <br>
  * <b> Partitions : </b> No, will yield worng results. <br>

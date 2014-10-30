@@ -54,8 +54,8 @@ import com.datatorrent.lib.util.UnifierMap;
  * (20,{(Bill,20,3.9F)})
  * </pre>
  * <b>Ports : </b> <br>
- * <b> inport : </b> expects tuple Map<String, Object> <br>
- * <b>outport : </b> emits Map<Object, List<Map<String, Object>>> <br>
+ * <b> inport : </b> expects tuple Map&lt;String, Object&gt; <br>
+ * <b>outport : </b> emits Map&lt;Object, List&lt;Map&lt;String, Object&gt;&gt;&gt; <br>
  *
  * <b>StateFull : </b> Yes, tuples are aggregated over application window. <br>
  * <b>Partitions : </b> Yes, map unifier on output port. <br>
